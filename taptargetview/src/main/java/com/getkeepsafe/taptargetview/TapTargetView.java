@@ -37,7 +37,7 @@ import android.graphics.Region;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import androidx.annotation.Nullable;
+import android.support.annotation.Nullable;
 import android.text.DynamicLayout;
 import android.text.Layout;
 import android.text.SpannableStringBuilder;
@@ -426,21 +426,16 @@ public class TapTargetView extends View {
 
     applyTargetOptions(context);
 
-    final boolean hasKitkat = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
     final boolean translucentStatusBar;
     final boolean translucentNavigationBar;
-    final boolean layoutNoLimits;
-
-    if (context instanceof Activity) {
+    if (Build.VERSION.SDK_INT >= 19 && context instanceof Activity) {
       Activity activity = (Activity) context;
       final int flags = activity.getWindow().getAttributes().flags;
-      translucentStatusBar = hasKitkat && (flags & WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS) != 0;
-      translucentNavigationBar = hasKitkat && (flags & WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION) != 0;
-      layoutNoLimits = (flags & WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS) != 0;
+      translucentStatusBar = (flags & WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS) != 0;
+      translucentNavigationBar = (flags & WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION) != 0;
     } else {
       translucentStatusBar = false;
       translucentNavigationBar = false;
-      layoutNoLimits = false;
     }
 
     globalLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -479,14 +474,10 @@ public class TapTargetView extends View {
               }
 
               // We bound the boundaries to be within the screen's coordinates to
-              // handle the case where the flag FLAG_LAYOUT_NO_LIMITS is set
-              if (layoutNoLimits) {
-                topBoundary = Math.max(0, rect.top);
-                bottomBoundary = Math.min(rect.bottom, displayMetrics.heightPixels);
-              } else {
-                topBoundary = rect.top;
-                bottomBoundary = rect.bottom;
-              }
+              // handle the case where the layout bounds do not match
+              // (like when FLAG_LAYOUT_NO_LIMITS is specified)
+              topBoundary = Math.max(0, rect.top);
+              bottomBoundary = Math.min(rect.bottom, displayMetrics.heightPixels);
             }
 
             drawTintedTarget();
@@ -550,7 +541,7 @@ public class TapTargetView extends View {
   }
 
   protected void applyTargetOptions(Context context) {
-    shouldTintTarget = !target.transparentTarget && target.tintTarget;
+    shouldTintTarget = target.tintTarget;
     shouldDrawShadow = target.drawShadow;
     cancelable = target.cancelable;
 
